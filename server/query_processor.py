@@ -1,3 +1,6 @@
+
+import re
+import unicodedata
 from dataclasses import dataclass
 
 
@@ -9,7 +12,13 @@ class ProcessedQuery:
 
 
 def process_query(query: str) -> ProcessedQuery:
-    """Normalize a query. """
-    original = query.strip()
-    terms = tuple(dict.fromkeys(original.casefold().split()))
-    return ProcessedQuery(original_query=original, terms=terms, expanded_terms=())
+    original = unicodedata.normalize("NFC", query).strip()
+    terms = tuple(dict.fromkeys(
+        re.findall(r"[가-힣]+|[a-zA-Z0-9_]+", original.casefold())
+    ))
+
+    return ProcessedQuery(
+        original_query=original,
+        terms=terms,
+        expanded_terms=(),
+    )
