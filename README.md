@@ -2,6 +2,8 @@
 
 다양한 형식의 문서를 탐색하고 검색할 수 있는 MCP 서버
 
+![Web UI Preview](docs/images/web-ui-preview.png)
+
 주요 기능
 - 문서 목록 조회
 - 검색어 기반의 문서 검색 및 페이지네이션 지원
