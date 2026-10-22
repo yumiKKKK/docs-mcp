@@ -1,8 +1,16 @@
 # MCP Document Search
 
+다양한 형식의 문서를 탐색하고 검색할 수 있는 MCP 서버
+
+주요 기능
+- 문서 목록 조회
+- 검색어 기반의 문서 검색 및 페이지네이션 지원
+- 지원 파일 형식: .md, .txt, .pdf, .ppt, .pptx, .docx, .xlsx
+
+
 ## Requirements
 
-Python 3.10+, Node.js 18+ recommended.
+Python 3.10+, Node.js 18+
 
 ## Run backend
 
@@ -32,4 +40,4 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:5173`. 
+`http://localhost:5173`

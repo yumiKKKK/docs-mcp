@@ -97,14 +97,13 @@ class DocumentRepository:
             document = Document(str(resolved))
             contents = []
 
-            # 문단 텍스트 추출
             contents.extend(
                 paragraph.text
                 for paragraph in document.paragraphs
                 if paragraph.text.strip()
             )
 
-            # 표의 셀 텍스트 추출
+            # 표
             for table in document.tables:
                 for row in table.rows:
                     cells = [
@@ -142,7 +141,7 @@ class DocumentRepository:
                             for value in row
                         ]
 
-                        # 빈 행은 제외
+                        # 빈 행 제외
                         if any(value.strip() for value in values):
                             rows_text.append(" | ".join(values))
 

@@ -47,7 +47,6 @@ def find_occurrences(content: str, terms: Iterable[str], snippet_before: int = 1
             if term not in item["matched_terms"]:
                 item["matched_terms"].append(term)
 
-            # 겹치는 검색 결과도 찾음
             position += 1
 
     results = []
