@@ -2,7 +2,7 @@
 
 docs/ 디렉터리에 업로드된 문서를 탐색하고 검색할 수 있는 MCP 서버입니다.
 
-![Web UI Preview](docs/images/web-ui-preview.png)
+![Web UI Preview](images/web-ui-preview.png)
 
 주요 기능
 - 문서 목록 조회
