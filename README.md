@@ -1,6 +1,6 @@
 # MCP Document Search
 
-다양한 형식의 문서를 탐색하고 검색할 수 있는 MCP 서버
+docs/ 디렉터리에 업로드된 문서를 탐색하고 검색할 수 있는 MCP 서버입니다.
 
 ![Web UI Preview](docs/images/web-ui-preview.png)
 
