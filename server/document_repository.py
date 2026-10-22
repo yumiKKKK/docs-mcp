@@ -1,7 +1,7 @@
 
 from pathlib import Path
 
-SUPPORTED_EXTENSIONS = {".md", ".txt", ".pdf", ".ppt", ".pptx"}
+SUPPORTED_EXTENSIONS = {".md", ".txt", ".pdf", ".ppt", ".pptx", ".docx", ".xlsx"}
 
 
 class DocumentRepository:
@@ -85,6 +85,76 @@ class DocumentRepository:
                 "Legacy .ppt support is not implemented. "
                 "Convert the file to .pptx first."
             )
+
+        if extension == ".docx":
+            try:
+                from docx import Document
+            except ImportError as exc:
+                raise RuntimeError(
+                    "DOCX support requires python-docx"
+                ) from exc
+
+            document = Document(str(resolved))
+            contents = []
+
+            # 문단 텍스트 추출
+            contents.extend(
+                paragraph.text
+                for paragraph in document.paragraphs
+                if paragraph.text.strip()
+            )
+
+            # 표의 셀 텍스트 추출
+            for table in document.tables:
+                for row in table.rows:
+                    cells = [
+                        cell.text.strip()
+                        for cell in row.cells
+                    ]
+                    if any(cells):
+                        contents.append(" | ".join(cells))
+
+            return "\n".join(contents)
+
+        if extension == ".xlsx":
+            try:
+                from openpyxl import load_workbook
+            except ImportError as exc:
+                raise RuntimeError(
+                    "XLSX support requires openpyxl"
+                ) from exc
+
+            workbook = load_workbook(
+                filename=resolved,
+                read_only=True,
+                data_only=True,
+            )
+
+            try:
+                sheets_text = []
+
+                for sheet in workbook.worksheets:
+                    rows_text = []
+
+                    for row in sheet.iter_rows(values_only=True):
+                        values = [
+                            str(value) if value is not None else ""
+                            for value in row
+                        ]
+
+                        # 빈 행은 제외
+                        if any(value.strip() for value in values):
+                            rows_text.append(" | ".join(values))
+
+                    if rows_text:
+                        sheets_text.append(
+                            f"[시트: {sheet.title}]\n"
+                            + "\n".join(rows_text)
+                        )
+
+                return "\n\n".join(sheets_text)
+            finally:
+                workbook.close()
 
         return resolved.read_text(encoding="utf-8")
 
