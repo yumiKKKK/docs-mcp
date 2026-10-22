@@ -1,4 +1,5 @@
 # MCP Document Search
+26.10.22 ~
 
 docs/ 디렉터리에 업로드된 문서를 탐색하고 검색할 수 있는 MCP 서버입니다.
 
