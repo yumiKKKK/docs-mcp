@@ -3,9 +3,17 @@ from collections.abc import Iterable
 
 
 def score_terms(content: str, terms: Iterable[str]) -> tuple[int, list[str], dict[str, int]]:
+    """총 등장 횟수, 매칭 검색어, 검색어별 등장 횟수 반환"""
+
+    # 대소문자 구분 없는 검색을 위한 정규화
     normalized = content.casefold()
+
+    # 검색어별 등장 횟수 계산
     counts = {term: normalized.count(term.casefold()) for term in terms}
+
+    # 실제 매칭된 검색어 추출
     matched = [term for term, count in counts.items() if count > 0]
+
     return sum(counts.values()), matched, counts
 
 
@@ -13,7 +21,6 @@ def find_occurrences(content: str, terms: Iterable[str], snippet_before: int = 1
     normalized_chars = []
     index_map = []
 
-    # casefold된 각 문자와 원본 문자열의 인덱스를 연결
     for original_index, char in enumerate(content):
         folded = char.casefold()
         normalized_chars.extend(folded)
@@ -22,6 +29,7 @@ def find_occurrences(content: str, terms: Iterable[str], snippet_before: int = 1
     normalized = "".join(normalized_chars)
     occurrences = {}
 
+    # 검색어별 등장 위치 탐색
     for term in terms:
         folded_term = term.casefold()
         if not folded_term:
@@ -49,6 +57,7 @@ def find_occurrences(content: str, terms: Iterable[str], snippet_before: int = 1
 
             position += 1
 
+    # 검색 위치를 기준으로 앞뒤 문맥 추출
     results = []
     for item in occurrences.values():
         start = max(0, item["position"] - snippet_before)
@@ -69,6 +78,7 @@ def find_occurrences(content: str, terms: Iterable[str], snippet_before: int = 1
 
 
 def sort_results(results: list[dict]) -> list[dict]:
+    # 점수 내림차순, 파일명 및 위치 오름차순 정렬
     return sorted(
         results,
         key=lambda item: (

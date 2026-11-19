@@ -1,5 +1,5 @@
 # MCP Document Search
-26.10.22 ~
+26.10.22 
 
 docs/ 디렉터리에 업로드된 문서를 탐색하고 검색할 수 있는 MCP 서버입니다.
 
@@ -7,19 +7,24 @@ docs/ 디렉터리에 업로드된 문서를 탐색하고 검색할 수 있는 M
 
 주요 기능
 - 문서 목록 조회
-- 검색어 기반의 문서 검색 및 페이지네이션 지원
-- 지원 파일 형식: .md, .txt, .pdf, .ppt, .pptx, .docx, .xlsx
+- 검색어 기반의 문서 검색 
+- 검색 결과를 페이지 단위로 조회
+- 지원 파일 형식: .md, .txt, .pdf, .pptx, .docx, .xlsx
 
 
 ## Requirements
 
-Python 3.10+, Node.js 18+
+Python 3.10+, Node.js 18+, sqlite3
 
-## Run backend
+# Getting Started
+
+## 1. Run backend
+
+Set virtual environment : 
 
 ```bash
-python -m venv .venv
-source .venv\Scripts\activate
+python -m venv .venv 
+source .venv/Scripts/activate
 python -m pip install -e '.[test]'
 ```
 
@@ -35,7 +40,7 @@ Run the HTTP adapter :
 uvicorn server.http_api:app --host 127.0.0.1 --port 8000
 ```
 
-## Run web UI
+## 2. Run web UI
 
 ```bash
 cd web
@@ -44,3 +49,7 @@ npm run dev
 ```
 
 `http://localhost:5173`
+
+# MCP 실행 (개발용)
+
+mcp dev run_mcp_server.py
