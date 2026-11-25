@@ -1,23 +1,34 @@
 # MCP Document Search
 
 Started 26.10.22
+
 Last Updated 26.11.25
 
 로컬 문서를 탐색하고 검색할 수 있는 문서 검색 서버입니다.
 
-두 가지 방식으로 사용할 수 있습니다.
-- **Web UI**: 웹 브라우저에서 문서 목록을 확인하고 검색할 수 있습니다.
-- **MCP**: AI 어시스턴트와 연결하여 대화 중 문서를 검색할 수 있습니다.
 
-|                      문서 검색                      |                      문서 관리                      |
-|:---------------------------------------------------:|:---------------------------------------------------:|
-|        ![Web UI](images/web-ui-preview.png)         | ![Management](images/web-ui-preview-management.png) |
-|                        통계                         |                                                     |
-| ![Statistics](images/web-ui-preview-statistics.png) |                                                     |
+## 사용 방법
+
+두 가지 방식으로 사용할 수 있습니다.
+
+### 1. Web UI
+
+웹 브라우저에서 문서 목록을 확인하고 검색할 수 있습니다.
+
+![Web UI Preview](images/web-ui-preview.png)
+
+|                          문서 관리                          |                         인덱스 통계                         |
+|:-----------------------------------------------------------:|:-----------------------------------------------------------:|
+| ![Management Preview](images/web-ui-preview-management.png) | ![Statistics Preview](images/web-ui-preview-statistics.png) |
+
+### 2. MCP
+
+MCP를 통해 외부 도구 및 AI 애플리케이션과 연동하여 문서를 활용할 수 있습니다.
 
 ![MCP Preview](images/mcp-preview.png)
 
-주요 기능
+## 주요 기능
+
 - 문서 목록 조회
 - 검색어 기반의 문서 검색 
 - 검색 결과를 페이지 단위로 조회
