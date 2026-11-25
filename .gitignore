@@ -19,3 +19,5 @@ storage/*.db
 build/
 
 .DS_Store
+
+tests/benchmark-results/*

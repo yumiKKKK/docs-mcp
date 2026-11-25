@@ -11,6 +11,13 @@ def score_terms(content: str, terms: Iterable[str]) -> tuple[int, list[str], dic
     # 검색어별 등장 횟수 계산
     counts = {term: normalized.count(term.casefold()) for term in terms}
 
+    # # 검색어별 등장 횟수 계산
+    # counts = {}
+    # for term in terms:
+    #     # 검색어 미리 정규화
+    #     normalized_term = term.casefold()
+    #     counts[term] = normalized.count(normalized_term)
+
     # 실제 매칭된 검색어 추출
     matched = [term for term, count in counts.items() if count > 0]
 

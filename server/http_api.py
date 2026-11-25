@@ -1,4 +1,3 @@
-
 import os
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -11,7 +10,7 @@ from .search_service import SearchService
 from .extractor import DocumentExtractor
 from .chunker import DocumentChunker
 from .indexer import DocumentIndexer
-
+from utils.performance_middleware import measure_performance
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DOCS_DIR = Path(os.getenv("DOCS_DIR", BASE_DIR / "docs")).resolve()
@@ -68,7 +67,6 @@ def search(
         page: int = Query(1, ge=1),
         page_size: int = Query(10, ge=1, le=50)
 ):
-
     try:
         result = search_service.search(
             query=query,
@@ -90,6 +88,7 @@ def search(
             detail="Internal server error"
         ) from exc
 
+
 @app.get("/api/documents")
 def list_documents():
     return {
@@ -99,9 +98,11 @@ def list_documents():
         ]
     }
 
+
 @app.post("/api/index/sync")
 def sync_documents():
     return indexer.sync()
+
 
 @app.get("/api/index/statistics")
 def get_index_statistics():
