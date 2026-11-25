@@ -378,14 +378,17 @@ class DocumentIndexer:
         """문서, 청크 및 확장자별 인덱싱 통계 조회"""
 
         with self._connect() as conn:
+            # 전체 문서 개수
             document_count = conn.execute(
                 "SELECT COUNT(*) FROM documents"
             ).fetchone()[0]
 
+            # 전체 청크 개수
             chunk_count = conn.execute(
                 "SELECT COUNT(*) FROM chunks"
             ).fetchone()[0]
 
+            # 확장자별 문서 개수
             extension_counts = conn.execute(
                 """
                 SELECT extension, COUNT(*)

@@ -99,7 +99,10 @@ def list_documents():
         ]
     }
 
-
 @app.post("/api/index/sync")
 def sync_documents():
     return indexer.sync()
+
+@app.get("/api/index/statistics")
+def get_index_statistics():
+    return indexer.get_statistics()

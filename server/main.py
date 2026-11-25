@@ -40,5 +40,15 @@ def list_documents() -> list[str]:
 def search_documents(query: str, page: int = 1, page_size: int = 10) -> dict[str, Any]:
     return search_service.search(query, page, page_size).model_dump()
 
+# 문서 인덱싱 동기화
+@mcp.tool()
+def sync_documents() -> dict[str, Any]:
+    return indexer.sync()
+
+# 문서, 청크 및 확장자별 인덱싱 통계를 조회 (인덱싱 상태 모니터링용)
+@mcp.tool()
+def get_statistics() -> dict[str, Any]:
+    return indexer.get_statistics()
+
 if __name__ == "__main__":
     mcp.run(transport="stdio")
