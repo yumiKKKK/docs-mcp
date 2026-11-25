@@ -109,3 +109,10 @@ mcp dev run_mcp_server.py
 ├── run_mcp_server.py          # MCP 개발 및 테스트 실행 파일
 └── README.md                  # 프로젝트 설명 및 사용 가이드
 ```
+
+## Key Features
+
+- SHA256 기반 변경 감지로 효율적인 증분 인덱싱
+- FTS5 기반 전문 검색과 부분 문자열 검색의 이중 검색 구조
+- 문서와 청크 간 관계 유지 및 원본 출처 추적
+- SQLite 기반으로 별도의 검색 서버 없이 독립적인 인덱싱 및 검색 환경 제공

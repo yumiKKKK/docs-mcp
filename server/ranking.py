@@ -1,88 +1,105 @@
 
-from collections.abc import Iterable
+from typing import Iterable
+import heapq
 
+from .text_search import _iter_matches
+from .snippet import create_snippet
 
-def score_terms(content: str, terms: Iterable[str]) -> tuple[int, list[str], dict[str, int]]:
+def score_terms(
+        content: str,
+        terms: Iterable[str],
+) -> tuple[int, list[str], dict[str, int]]:
     """총 등장 횟수, 매칭 검색어, 검색어별 등장 횟수 반환"""
 
-    # 대소문자 구분 없는 검색을 위한 정규화
     normalized = content.casefold()
 
-    # 검색어별 등장 횟수 계산
-    counts = {term: normalized.count(term.casefold()) for term in terms}
+    counts = {}
+    normalized_counts = {}
 
-    # # 검색어별 등장 횟수 계산
-    # counts = {}
-    # for term in terms:
-    #     # 검색어 미리 정규화
-    #     normalized_term = term.casefold()
-    #     counts[term] = normalized.count(normalized_term)
+    for term in terms:
+        if term in counts:
+            continue
 
-    # 실제 매칭된 검색어 추출
-    matched = [term for term, count in counts.items() if count > 0]
+        normalized_term = term.casefold()
+
+        if normalized_term not in normalized_counts:
+            normalized_counts[normalized_term] = (
+                normalized.count(normalized_term)
+            )
+
+        counts[term] = normalized_counts[normalized_term]
+
+    matched = [
+        term for term, count in counts.items()
+        if count > 0
+    ]
 
     return sum(counts.values()), matched, counts
 
 
-def find_occurrences(content: str, terms: Iterable[str], snippet_before: int = 100, snippet_after: int = 500) -> list[dict]:
-    normalized_chars = []
-    index_map = []
+def iter_occurrence_positions(
+        content: str,
+        terms: Iterable[str],
+):
+    """검색어의 등장 위치와 매칭 정보를 생성한다."""
+    if not content:
+        return
 
-    for original_index, char in enumerate(content):
-        folded = char.casefold()
-        normalized_chars.extend(folded)
-        index_map.extend([original_index] * len(folded))
+    terms = list(dict.fromkeys(term for term in terms if term))
+    if not terms:
+        return
 
-    normalized = "".join(normalized_chars)
+    term_order = {term: i for i, term in enumerate(terms)}
     occurrences = {}
 
-    # 검색어별 등장 위치 탐색
-    for term in terms:
-        folded_term = term.casefold()
-        if not folded_term:
-            continue
+    for start, end, term in _iter_matches(content, terms):
+        item = occurrences.get(start)
 
-        position = 0
-        while True:
-            position = normalized.find(folded_term, position)
-            if position == -1:
-                break
+        if item is None:
+            item = {
+                "position": start,
+                "end": end,
+                "matched_terms": [term],
+            }
+            occurrences[start] = item
 
-            end_position = position + len(folded_term)
-            original_start = index_map[position]
-            original_end = index_map[end_position - 1] + 1
+        else:
+            if end > item["end"]:
+                item["end"] = end
 
-            # 같은 원본 위치에 여러 검색어가 매칭되면 하나로 합침
-            item = occurrences.setdefault(original_start, {
-                "position": original_start,
-                "end": original_end,
-                "matched_terms": [],
-            })
-            item["end"] = max(item["end"], original_end)
             if term not in item["matched_terms"]:
                 item["matched_terms"].append(term)
 
-            position += 1
+    for item in sorted(occurrences.values(), key=lambda x: x["position"]):
+        item["matched_terms"].sort(key=term_order.__getitem__)
+        yield item
 
-    # 검색 위치를 기준으로 앞뒤 문맥 추출
+def find_occurrences(
+        content: str,
+        terms: Iterable[str],
+        snippet_before: int = 100,
+        snippet_after: int = 500,
+) -> list[dict]:
+
+    if not content or snippet_before < 0 or snippet_after < 0:
+        return []
+
     results = []
-    for item in occurrences.values():
-        start = max(0, item["position"] - snippet_before)
-        end = min(len(content), item["end"] + snippet_after)
-        snippet = content[start:end].strip()
-        if start > 0:
-            snippet = "..." + snippet
-        if end < len(content):
-            snippet += "..."
 
+    for item in iter_occurrence_positions(content, terms):
         results.append({
             "position": item["position"],
             "matched_terms": item["matched_terms"],
-            "snippet": snippet,
+            "snippet": create_snippet(
+                content,
+                item["position"],
+                item["end"],
+                snippet_before,
+                snippet_after,
+            ),
         })
 
     return results
-
 
 def sort_results(results: list[dict]) -> list[dict]:
     # 점수 내림차순, 파일명 및 위치 오름차순 정렬
@@ -94,3 +111,25 @@ def sort_results(results: list[dict]) -> list[dict]:
             item.get("_position", 0),
         ),
     )
+
+def select_page(
+        results: list[dict],
+        start: int,
+        page_size: int,
+) -> list[dict]:
+    """전체 정렬 없이 필요한 페이지의 결과만 선택한다."""
+
+    if start < 0 or page_size < 1:
+        raise ValueError("Invalid pagination parameters")
+
+    end = start + page_size
+
+    return heapq.nsmallest(
+        end,
+        results,
+        key=lambda item: (
+            -item["score"],
+            item["filename"],
+            item.get("_position", 0),
+        ),
+    )[start:]

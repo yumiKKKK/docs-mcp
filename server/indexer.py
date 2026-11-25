@@ -5,7 +5,6 @@ from .document_repository import DocumentRepository
 from .extractor import DocumentExtractor
 from .chunker import DocumentChunker
 
-
 class DocumentIndexer:
     """
     문서 추출, 청킹 및 검색 인덱싱 관리하는 클래스
@@ -49,6 +48,9 @@ class DocumentIndexer:
 
         connection.execute("PRAGMA foreign_keys = ON")
         connection.execute("PRAGMA busy_timeout = 30000")
+
+        connection.execute("PRAGMA journal_mode = WAL")
+        connection.execute("PRAGMA synchronous = NORMAL")
 
         return connection
 
@@ -121,108 +123,160 @@ class DocumentIndexer:
                 (info.relative_path,)
             ).fetchone()
 
-            if existing and existing[1] == info.sha256:
-                return False
+        if existing and existing[1] == info.sha256:
+            return False
 
-            # 파일 추출 및 청킹
-            pages = self.extractor.extract(info.path)
+        # 파일 추출 및 청킹
+        pages = self.extractor.extract(info.path)
+        chunks = self.chunker.split(pages)
 
-            chunks = self.chunker.split(pages)
+        chunk_rows = [
+            (
+                0,
+                chunk.chunk_index,
+                chunk.page_number,
+                chunk.location,
+                chunk.content
+            )
+            for chunk in chunks
+        ]
 
+        with self._connect() as conn:
             # 기존 문서 삭제
             if existing:
 
                 document_id = existing[0]
 
-                old_chunks = conn.execute(
+                # 기존 FTS 데이터 일괄 삭제
+                conn.execute(
                     """
-                    SELECT id
+                    DELETE FROM chunks_fts
+                    WHERE rowid IN (
+                        SELECT id
+                        FROM chunks
+                        WHERE document_id = ?
+                    )
+                    """,
+                    (document_id,)
+                )
+
+                # 기존 청크 일괄 삭제
+                conn.execute(
+                    """
+                    DELETE FROM chunks
+                    WHERE document_id = ?
+                    """,
+                    (document_id,)
+                )
+
+                # 기존 문서 정보 갱신
+                conn.execute(
+                    """
+                    UPDATE documents
+                    SET extension = ?,
+                        file_size = ?,
+                        modified_at = ?,
+                        sha256 = ?,
+                        indexed_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                    """,
+                    (
+                        info.extension,
+                        info.size,
+                        info.modified_at,
+                        info.sha256,
+                        document_id
+                    )
+                )
+            else:
+                # 신규 문서 등록
+                cursor = conn.execute(
+                    """
+                    INSERT INTO documents (
+                        path,
+                        extension,
+                        file_size,
+                        modified_at,
+                        sha256
+                    )
+                    VALUES (?, ?, ?, ?, ?)
+                    """,
+                    (
+                        info.relative_path,
+                        info.extension,
+                        info.size,
+                        info.modified_at,
+                        info.sha256
+                    )
+                )
+
+                document_id = cursor.lastrowid
+
+            # 청크 일괄 INSERT
+            if chunk_rows:
+
+                conn.executemany(
+                    """
+                    INSERT INTO chunks (
+                        document_id,
+                        chunk_index,
+                        page_number,
+                        location,
+                        content
+                    )
+                    VALUES (?, ?, ?, ?, ?)
+                    """,
+                    [
+                        (
+                            document_id,
+                            chunk_index,
+                            page_number,
+                            location,
+                            content
+                        )
+                        for _, chunk_index, page_number, location, content
+                        in chunk_rows
+                    ]
+                )
+
+                # 생성된 청크 ID 조회
+                inserted_chunks = conn.execute(
+                    """
+                    SELECT id, content, location
                     FROM chunks
                     WHERE document_id = ?
+                    ORDER BY chunk_index, id
                     """,
                     (document_id,)
                 ).fetchall()
 
-                for (chunk_id,) in old_chunks:
-                    conn.execute(
-                        """
-                        DELETE
-                        FROM chunks_fts
-                        WHERE rowid = ?
-                        """,
-                        (chunk_id,)
-                    )
-
-                conn.execute(
-                    "DELETE FROM chunks WHERE document_id = ?",
-                    (document_id,)
-                )
-
-                conn.execute(
-                    "DELETE FROM documents WHERE id = ?",
-                    (document_id,)
-                )
-
-            cursor = conn.execute(
-                """
-                INSERT INTO documents (path,
-                                       extension,
-                                       file_size,
-                                       modified_at,
-                                       sha256)
-                VALUES (?, ?, ?, ?, ?)
-                """,
-                (
-                    info.relative_path,
-                    info.extension,
-                    info.size,
-                    info.modified_at,
-                    info.sha256
-                )
-            )
-
-            document_id = cursor.lastrowid
-
-            for chunk in chunks:
-                cursor = conn.execute(
+                # FTS 데이터 일괄 INSERT
+                conn.executemany(
                     """
-                    INSERT INTO chunks (document_id,
-                                        chunk_index,
-                                        page_number,
-                                        location,
-                                        content)
+                    INSERT INTO chunks_fts (
+                        rowid,
+                        content,
+                        filename,
+                        path,
+                        location
+                    )
                     VALUES (?, ?, ?, ?, ?)
                     """,
-                    (
-                        document_id,
-                        chunk.chunk_index,
-                        chunk.page_number,
-                        chunk.location,
-                        chunk.content
-                    )
-                )
-
-                chunk_id = cursor.lastrowid
-
-                conn.execute(
-                    """
-                    INSERT INTO chunks_fts (rowid,
-                                            content,
-                                            filename,
-                                            path,
-                                            location)
-                    VALUES (?, ?, ?, ?, ?)
-                    """,
-                    (
-                        chunk_id,
-                        chunk.content,
-                        info.path.name,
-                        info.relative_path,
-                        chunk.location
-                    )
+                    [
+                        (
+                            chunk_id,
+                            content,
+                            info.path.name,
+                            info.relative_path,
+                            location
+                        )
+                        for chunk_id, content, location
+                        in inserted_chunks
+                    ]
                 )
 
         return True
+
 
     def sync(self) -> dict:
         """docs 디렉터리와 인덱스의 상태를 동기화"""
@@ -242,10 +296,10 @@ class DocumentIndexer:
             "failed": []
         }
 
+        # 신규 및 변경 문서 인덱싱
         for path in documents:
 
             try:
-
                 changed = self.index_document(path)
 
                 if changed:
@@ -263,39 +317,46 @@ class DocumentIndexer:
         # 삭제된 문서 정리
         with self._connect() as conn:
 
+            # 현재 파일 목록과 DB의 문서 비교
             rows = conn.execute(
                 "SELECT id, path FROM documents"
             ).fetchall()
 
-            for document_id, path in rows:
+            deleted_ids = [
+                document_id
+                for document_id, path in rows
+                if path not in current_paths
+            ]
 
-                if path not in current_paths:
+            if deleted_ids:
 
-                    chunk_ids = conn.execute(
-                        """
-                        SELECT id
-                        FROM chunks
-                        WHERE document_id = ?
-                        """,
-                        (document_id,)
-                    ).fetchall()
+                placeholders = ",".join(
+                    "?" for _ in deleted_ids
+                )
 
-                    for (chunk_id,) in chunk_ids:
-                        conn.execute(
-                            """
-                            DELETE
-                            FROM chunks_fts
-                            WHERE rowid = ?
-                            """,
-                            (chunk_id,)
-                        )
-
-                    conn.execute(
-                        "DELETE FROM documents WHERE id = ?",
-                        (document_id,)
+                # FTS 데이터 일괄 삭제
+                conn.execute(
+                    f"""
+                    DELETE FROM chunks_fts
+                    WHERE rowid IN (
+                        SELECT c.id
+                        FROM chunks AS c
+                        WHERE c.document_id IN ({placeholders})
                     )
+                    """,
+                    deleted_ids
+                )
 
-                    stats["deleted"] += 1
+                # 문서 삭제 및 chunks CASCADE 삭제
+                conn.execute(
+                    f"""
+                    DELETE FROM documents
+                    WHERE id IN ({placeholders})
+                    """,
+                    deleted_ids
+                )
+
+                stats["deleted"] = len(deleted_ids)
 
         return stats
 

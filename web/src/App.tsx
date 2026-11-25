@@ -108,7 +108,9 @@ export default function App() {
                                     <h2>검색 결과</h2>
                                     <p>
                                         {search.data
-                                            ? `${search.data.total.toLocaleString()}개 문서 · ${search.data.page} / ${search.data.total_pages} 페이지`
+                                            ? search.data.total > 0
+                                                ? `${search.data.total.toLocaleString()}개 문서 · ${search.data.page} / ${search.data.total_pages} 페이지`
+                                                : '검색 결과 0개 문서'
                                             : '검색어를 입력해 문서를 탐색하세요.'}
                                     </p>
                                 </div>

@@ -10,7 +10,6 @@ from .search_service import SearchService
 from .extractor import DocumentExtractor
 from .chunker import DocumentChunker
 from .indexer import DocumentIndexer
-from utils.performance_middleware import measure_performance
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DOCS_DIR = Path(os.getenv("DOCS_DIR", BASE_DIR / "docs")).resolve()
