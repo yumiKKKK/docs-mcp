@@ -299,12 +299,13 @@ class DocumentIndexer:
 
         return stats
 
+
     def search(
             self,
             query: str,
             limit: int = 5
     ) -> list[dict]:
-        """전문 검색 기반 관련 문서 청크 조회"""
+        """FTS5 검색 및 한국어 부분 문자열 검색"""
 
         if not query or not query.strip():
             return []
@@ -312,20 +313,23 @@ class DocumentIndexer:
         if limit < 1:
             raise ValueError("limit must be positive")
 
-        # 사용자 검색어를 FTS5 구문으로 변환
-        terms = query.split()
+        terms = [
+            term.strip()
+            for term in query.split()
+            if term.strip()
+        ]
+
+        if not terms:
+            return []
 
         fts_query = " OR ".join(
             '"' + term.replace('"', '""') + '"'
             for term in terms
-            if term.strip()
         )
-
-        if not fts_query:
-            return []
 
         with self._connect() as conn:
 
+            # 1차: 기존 FTS5 검색
             rows = conn.execute(
                 """
                 SELECT d.path,
@@ -341,25 +345,55 @@ class DocumentIndexer:
                                2.0,
                                1.0
                        ) AS relevance
-
+    
                 FROM chunks_fts
-
+    
                          JOIN chunks c
                               ON c.id = chunks_fts.rowid
-
+    
                          JOIN documents d
                               ON d.id = c.document_id
-
+    
                 WHERE chunks_fts MATCH ?
-
+    
                 ORDER BY relevance ASC
-
+    
                 LIMIT ?
                 """,
                 (fts_query, limit)
             ).fetchall()
 
-        results = [
+            # 2차: FTS5 결과가 없으면 부분 문자열 검색
+            if not rows:
+
+                conditions = " OR ".join(
+                    "instr(c.content, ?) > 0"
+                    for _ in terms
+                )
+
+                rows = conn.execute(
+                    f"""
+                    SELECT d.path,
+                           d.extension,
+                           c.chunk_index,
+                           c.page_number,
+                           c.location,
+                           c.content,
+                           0 AS relevance
+    
+                    FROM chunks c
+    
+                    JOIN documents d
+                        ON d.id = c.document_id
+    
+                    WHERE {conditions}
+    
+                    LIMIT ?
+                    """,
+                    (*terms, limit)
+                ).fetchall()
+
+        return [
             {
                 "filename": Path(row[0]).name,
                 "path": row[0],
@@ -372,7 +406,6 @@ class DocumentIndexer:
             }
             for row in rows
         ]
-        return results
 
     def get_statistics(self) -> dict:
         """문서, 청크 및 확장자별 인덱싱 통계 조회"""
