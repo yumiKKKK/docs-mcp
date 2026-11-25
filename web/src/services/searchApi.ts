@@ -47,3 +47,13 @@ export async function syncDocuments(): Promise<Record<string, unknown>> {
 
   return response.json();
 }
+
+export async function getStatistics(): Promise<Record<string, unknown>> {
+    const response = await fetch('/api/index/statistics');
+
+    if (!response.ok) {
+        throw new Error('인덱싱 통계를 조회하지 못했습니다.');
+    }
+
+    return response.json();
+}

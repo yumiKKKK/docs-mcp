@@ -712,3 +712,217 @@ footer span {
         width: 100%;
     }
 }
+
+
+/* App Navigation */
+
+.app-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 32px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.tab-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 14px 20px;
+
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+
+    color: #64748b;
+    font-size: 15px;
+    font-weight: 500;
+
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tab-button:hover {
+    color: #2563eb;
+}
+
+.tab-button.active {
+    color: #2563eb;
+    border-bottom-color: #2563eb;
+    font-weight: 700;
+}
+
+/* Statistics */
+
+.statistics-panel {
+    margin-top: 28px;
+    padding: 24px;
+
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+}
+
+.statistics-content {
+    padding: 20px;
+
+    background: #f8fafc;
+    border-radius: 10px;
+
+    font-size: 13px;
+    line-height: 1.7;
+
+    overflow-x: auto;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+/* Statistics Section */
+
+.statistics-section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-top: 12px;
+}
+
+.statistics-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.statistics-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+
+    padding: 24px;
+
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+}
+
+.statistics-card > span {
+    color: #64748b;
+    font-size: 14px;
+}
+
+.statistics-card strong {
+    color: #0f172a;
+    font-size: 32px;
+    font-weight: 700;
+}
+
+.statistics-card small {
+    color: #94a3b8;
+    font-size: 12px;
+}
+
+.statistics-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 42px;
+    height: 42px;
+
+    border-radius: 12px;
+    font-size: 20px;
+}
+
+.document-stat {
+    background: #eff6ff;
+}
+
+.chunk-stat {
+    background: #f5f3ff;
+}
+
+/* Extension Panel */
+
+.extension-panel {
+    padding: 24px;
+
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+}
+
+.extension-heading {
+    margin-bottom: 24px;
+}
+
+.extension-heading h4 {
+    margin: 0 0 6px;
+    font-size: 16px;
+}
+
+.extension-heading p {
+    margin: 0;
+    color: #94a3b8;
+    font-size: 13px;
+}
+
+.extension-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.extension-item {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+.extension-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.extension-name {
+    color: #334155;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.extension-count {
+    color: #64748b;
+    font-size: 13px;
+}
+
+.extension-progress {
+    height: 9px;
+    overflow: hidden;
+
+    background: #f1f5f9;
+    border-radius: 20px;
+}
+
+.extension-progress-bar {
+    height: 100%;
+
+    background: #3b82f6;
+    border-radius: 20px;
+
+    transition: width 0.3s ease;
+}
+
+@media (max-width: 640px) {
+    .statistics-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .statistics-card {
+        padding: 20px;
+    }
+
+    .extension-panel {
+        padding: 18px;
+    }
+}
